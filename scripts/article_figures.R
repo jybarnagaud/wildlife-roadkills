@@ -182,6 +182,7 @@ n.sp = samp.gis$Nb_d_sp,
 n.obs = samp.gis$Nb_d_bs,
 n.dates = samp.gis$Nb_d_dt
 )
+rownames(samp.data) <- samp.gis$id_plyg
 
 mean.samp <- apply(samp.data,2,mean)
 sd.samp <- apply(samp.data,2,sd)
@@ -225,6 +226,11 @@ p34b <- ggpar(p23, xlab = "PC3", ylab = 'PC4')
 (p12b + p23b) / (p34b + plot_spacer()) + plot_annotation(tag_levels = "a")
 
 ggsave("outputs/SM1_lcPCA.png", height = 10, width = 10)
+
+## SM1 : maps of sampling variables --------------------------------------------
+
+plot(samp.gis["Nb_d_sp"])
+
 
 ## TABLE 2 - model fit ---------------------------------------------------------
 
@@ -526,3 +532,111 @@ fp.faune
 
 
 ## FIGURE XX - sampling effort -------------------------------------------------
+
+
+## recomputing sampling effort from raw data -----------------------------------
+
+## open data files
+
+mmssp <-
+  read.csv2(
+    "D:/encadrement/Vandroux_2022/data/data/data_covariable/sampling/exportFB_Mam.csv"
+  )
+
+for(i in c(22,29,35,56)){
+nm <- paste("avissp",i,sep="") 
+fil <- paste("D:/encadrement/Vandroux_2022/data/data/data_covariable/sampling/exportFB_Avi",i,
+             "_03052022.txt",sep="")
+  assign(nm,
+  read.table(fil,
+    header = T,
+    sep = "\t"
+  )
+  )
+}
+
+avissp <- rbind(avissp22, avissp29,avissp35,avissp56)
+
+## recompute sampling effort for mammals
+
+# species richness, number of observers, number of unique dates (birds and mammals confounded)
+
+comp.effort <- function(x,y){
+
+  tp <-
+    unique(x[, c("GRID_NAME_maille",y)])
+
+  tp.agr <-
+    aggregate(
+      tp[,y],
+      by = list(tp$GRID_NAME_maille),
+      FUN = "length")
+}
+
+vari <- c("ID_SPECIES_Biolovision","DATE","UNIVERSAL_ID_OBSERVER")
+names(vari) <- c("sr","dat","obs")
+dataset <- c("mmssp","avissp")
+
+for(i in 1:3){
+  dftp <- data.frame()
+  for(j in 1:2){
+    dtp <- get(dataset[j])
+      atp <- comp.effort(dtp,vari[i])
+      colnames(atp) <- c("GRID_NAME_maille","z")
+    dftp <- rbind(dftp,atp)
+  }
+  sftp <- aggregate(dftp$z,by = list(dftp$GRID_NAME_maille),FUN="sum")
+  colnames(sftp) <- c("GRID_NAME_maille",names(vari)[i])
+  assign(paste("samp.new",names(vari)[i],sep="_"),sftp)
+  }
+
+samp.new.1 <- merge(samp.new_dat,samp.new_obs,by = "GRID_NAME_maille")
+samp.new.n <- merge(samp.new.1,samp.new_sr,by = "GRID_NAME_maille")
+
+# number of data, birds and mammals confounded
+
+n.obs.mm <- aggregate(mmssp$UNIVERSAL_ID_OBSERVATION,by = list(mmssp$GRID_NAME_maille), FUN = "length")
+n.obs.avi <- aggregate(avissp$UNIVERSAL_ID_OBSERVATION,by = list(avissp$GRID_NAME_maille), FUN = "length")
+n.obs.tot <- merge(n.obs.mm,n.obs.avi,by = "Group.1")
+n.obs.tot$n.obs <- apply(n.obs.tot[,2:3],1,"sum")
+samp.new.all <- merge(n.obs.tot[,c(1,4)],samp.new.n,by.x = "Group.1",by.y = "GRID_NAME_maille")
+colnames(samp.new.all)[1] <- "GRID_NAME_maille"
+
+# compute a PCA axis
+
+samp.new.pc <- samp.new.all[,-1]
+rownames(samp.new.pc) <- samp.new.all[,1]
+pc.new <- dudi.pca(samp.new.pc,scannf = F, nf = 2)
+samp.new.all2 <- merge(samp.new.all,pc.new$li,by.x = "GRID_NAME_maille",by.y = 0)
+
+# add coordinates
+
+xy.samp <-
+  aggregate(avissp[, c("COORD_LAT_.WGS84.", "COORD_LON_.WGS84.")],
+            by = list(avissp$"GRID_NAME_maille"),
+            FUN = "mean")
+colnames(xy.samp) <-
+  c("GRID_NAME_maille", "COORD_LAT_.WGS84.", "COORD_LON_.WGS84.")
+
+
+samp.new.xy <-
+  merge(samp.new.all2, xy.samp, by = "GRID_NAME_maille", all = T)
+
+colnames(samp.new.xy) <-
+  c("GRID_NAME_maille", "nb.data","nb.dates","nb.obs","sr" ,"Axis1","Axis2","lat.wgs84", "lon.wgs84")
+
+# pass to sf
+
+samp.sf <- st_as_sf(x = samp.new.xy, 
+                    coords = c("lon.wgs84","lat.wgs84"),
+                    crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+
+plot(samp.sf)
+
+# st_write(samp.sf, "outputs/new_sampling_raw.shp")
+
+# save also the df
+ 
+#write.csv2(samp.new.xy,"outputs/new_sampling_variables.csv")
+
+
