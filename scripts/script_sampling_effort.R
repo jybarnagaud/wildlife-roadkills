@@ -9,6 +9,11 @@
 
 library(sf)
 library(ade4)
+library(ggplot2)
+library(patchwork)
+library(viridis)
+library(factoextra)
+library(adegraphics)
 
 ## data ------------------------------------------------------------------------
 
@@ -31,6 +36,7 @@ n.sp = shape1$Nb_d_sp,
 n.obs = shape1$Nb_d_bs)
 
 sampling.pc <- sampling[,-c(1,2)]
+colnames(sampling.pc) <- c("N. records", "N. dates", "N. species", "N. observers")
 
 # retrieve geometry for later mapping
 
@@ -65,4 +71,42 @@ samp.eff <- sqrt(pc1+abs(min(pc1)))
 sampling2 <- cbind(coords.shape,sampling,samp.eff)
 write.csv2(sampling2,"outputs/sampling_effort.csv")
 
+## maps for Supplementary Materials -----------------------------------------
 
+nbdd <- ggplot(shape)+
+  geom_sf(aes(fill = log(Nb_d_dn+1)))+
+  labs(fill = "Number of records \n (log-transformed)")+
+  theme_classic()+
+  scale_fill_viridis(option ="A")+ 
+  theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
+
+nbdt <- ggplot(shape)+
+  geom_sf(aes(fill = log(Nb_d_dt+1)))+
+  labs(fill = "Number of dates \n (log-transformed)")+
+  theme_classic()+
+  scale_fill_viridis(option = "D")+ 
+  theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
+
+nbsr <- ggplot(shape)+
+  geom_sf(aes(fill = log(Nb_d_sp+1)))+
+  labs(fill = "Number of species \n (log-transformed)")+
+  theme_classic()+
+  scale_fill_viridis(option = "E")+ 
+  theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
+
+nbobs <- ggplot(shape)+
+  geom_sf(aes(fill = log(Nb_d_bs+1)))+
+  labs(fill = "Number of observers \n (log-transformed)")+
+  theme_classic()+
+  scale_fill_viridis(option = "G")+ 
+  theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
+
+(nbdd + nbdt) / (nbsr + nbobs) 
+
+
+ggsave("outputs/SM_2_maps.png",width=8, height = 8)
+
+## PCA projections for SM ------------------------------------------------------
+
+# normed scores
+pc.sampeff$c1
