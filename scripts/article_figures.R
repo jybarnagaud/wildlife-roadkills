@@ -7,7 +7,7 @@
 
 library(sf)
 library(inlabru)
-library(INLA)
+# library(INLA)
 library(fmesher)
 library(tmap)
 library(raster)
