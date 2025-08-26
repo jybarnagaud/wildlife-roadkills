@@ -1,6 +1,11 @@
-#-----------------------------------------------------------#
+#--------------------------------------------------------------------#
 #### This script computes the sampling effort covariate  ####
-#-----------------------------------------------------------#
+
+# for manuscript : 
+# Spatial analysis of the wildlife roadkill risk at a regional scale. 
+# anonymized until review process completed by the editor's request
+
+#--------------------------------------------------------------------#
 
 library(sf)
 library(ade4)
