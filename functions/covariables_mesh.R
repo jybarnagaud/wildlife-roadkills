@@ -24,12 +24,12 @@
 # sf (>= 1.0), raster (>= 3.6), terra (>= 1.7), ade4, INLA, inlabru/fmesher
 # NOTE: The code mixes 'raster' and 'terra'. This is fine if you are careful
 #       with conversions (raster<->terra) and object classes.
-# library(sf)
-# library(raster)
-# library(terra)
-# library(ade4)
-# library(INLA)      # or R-INLA
-# library(inlabru)   # for fm_mesh_2d, fm_contains, pixels, projectors, etc.
+ library(sf)
+ library(raster)
+ library(terra)
+ library(ade4)
+ library(INLA)      # or R-INLA
+ library(inlabru)   # for fm_mesh_2d, fm_contains, pixels, projectors, etc.
 
 # -------------------------------
 # Coordinate reference systems
@@ -154,7 +154,7 @@ Axis4R = foretR; values(Axis4R) = datNEW[, "Axis4"]
 # 'sampling' provides point-level PCA scores (Axis1/Axis2) to be spatially
 # averaged on a focal window, producing smoothed fields.
 
-sampling = st_read("data/sampling/new_sampling_raw.shp")
+sampling = st_read("data/vector/new_sampling_raw.shp")
 sampling = st_transform(sampling, PROJ_km)
 
 # Template raster for sampling-based layers (Axis1/Axis2). As above, extent &
@@ -217,7 +217,7 @@ haiedistR = mask(scale(log(haiedistR + 1)), domaine)
 # ----------------------------------------------------------------------------
 # Load point data for collision (roadkill) and live observations; convert to sf,
 # bring to km-based CRS, and clip to the domain.
-load("data/donBON.rda")
+load("data/R/donBON.rda")
 collision = roadkill_sp
 sfcoll = sf::st_as_sf(collision, coords = c("X", "Y"))
 st_crs(sfcoll) = PROJ_m
@@ -259,7 +259,7 @@ st_crs(dmesh) = PROJ_km
 # Read road network, transform, and restrict to domain. Build a 2-km outer
 # buffer, then shrink by 1 km to create an annulus (routeBUF) around roads.
 # routeBAR = domain minus that annulus (where we will place mesh triangles).
-routes = st_read("data/routes_diro_fill.shp")
+routes = st_read("data/vector/routes_diro_fill.shp")
 routes = st_transform(routes, PROJ_km)
 routes = st_intersection(routes, domaine)
 routeBUFtmp = st_buffer(routes, dist = 2)
