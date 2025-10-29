@@ -67,7 +67,7 @@ source("functions/covariables_mesh.R")
 #             [[1]] live (sf POINT), [[2]] dead (sf POINT),
 #             [[3]] NobsVIV (int),   [[4]] NobsMOR (int)
 
-source("observations.R")
+source("functions/observations.R")
 
 ## 6) Count observations by species group (years 2015–2020) --------------------
 #    Rationale: transparent summary of live vs mortality sample sizes used in
